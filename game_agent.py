@@ -118,6 +118,12 @@ class IsolationPlayer:
         self.time_left = None
         self.TIMER_THRESHOLD = timeout
 
+    def _time_check(self):
+        """Raise search timeout if time left is less than threshold."""
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+
 
 class MinimaxPlayer(IsolationPlayer):
     """Game-playing agent that chooses a move using depth-limited minimax
@@ -211,9 +217,39 @@ class MinimaxPlayer(IsolationPlayer):
         """
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
+        best_score = float("-inf")  # it can only get better from here!
+        best_move = (-1, -1)  # in case no legal moves, we return illegal move
+        for move in game.get_legal_moves():
+            new_score = self.min_value(game.forecast_move(move), 1, depth)
+            if new_score > best_score:
+                best_score = new_score
+                best_move = move
+        return best_move
 
-        # TODO: finish this function!
-        raise NotImplementedError
+    def min_value(self, game, current_depth, depth_limit):
+        """Return a win if game is over, else return min value over all legal children"""
+            if self.time_left() < self.TIMER_THRESHOLD:
+                raise SearchTimeout()if self.is_terminal(game) or current_depth >= depth_limit:
+            return self.score(game, self)
+        value = float("inf")
+        for move in game.get_legal_moves():
+            value = min(value, self.max_value(game.forecast_move(move), current_depth + 1, depth_limit))
+        return value
+
+    def max_value(self, game, current_depth, depth_limit):
+        """Return a loss if game is over, else return max value over all legal children"""
+            if self.time_left() < self.TIMER_THRESHOLD:
+                raise SearchTimeout()if self.is_terminal(game) or current_depth >= depth_limit:
+            return self.score(game, self)
+        value = float("-inf")
+        for move in game.get_legal_moves():
+            value = max(value, self.min_value(game.forecast_move(move), current_depth + 1, depth_limit))
+        return value
+
+    def is_terminal(self, game):
+        """Return true if no legal moves left"""
+            if self.time_left() < self.TIMER_THRESHOLD:
+                raise SearchTimeout()return not game.get_legal_moves(self)
 
 
 class AlphaBetaPlayer(IsolationPlayer):
@@ -304,6 +340,5 @@ class AlphaBetaPlayer(IsolationPlayer):
         """
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
-
         # TODO: finish this function!
         raise NotImplementedError
