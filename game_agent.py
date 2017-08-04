@@ -173,7 +173,10 @@ class MinimaxPlayer(IsolationPlayer):
         try:
             # The try/except block will automatically catch the exception
             # raised when the timer is about to expire.
-            return self.minimax(game, self.search_depth)
+            search_depth = 1
+            while True:
+                best_move = self.minimax(game, search_depth)
+                search_depth += 1
 
         except SearchTimeout:
             pass  # Handle any actions required after timeout as needed
@@ -297,7 +300,11 @@ class AlphaBetaPlayer(IsolationPlayer):
         try:
             # The try/except block will automatically catch the exception
             # raised when the timer is about to expire.
-            return self.alphabeta(game, self.search_depth)
+            # implement iterative deepening by incrementing the search depth until we run out of time
+            search_depth = 1
+            while True:
+                best_move = self.alphabeta(game, search_depth)
+                search_depth += 1
 
         except SearchTimeout:
             pass  # Handle any actions required after timeout as needed
