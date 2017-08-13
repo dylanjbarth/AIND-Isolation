@@ -1,0 +1,34 @@
+0: improved_score_minus_center_minus_distance_to_opponent
+1: improved_score_minus_center_plus_overlap_with_opponent
+2: improved_score_minus_center_plus_improved_center
+3: improved_score_minus_distance_to_opponent_plus_overlap_with_opponent
+4: improved_score_minus_distance_to_opponent_plus_improved_center
+5: improved_score_plus_overlap_with_opponent_plus_improved_center
+
+This script evaluates the performance of the custom_score evaluation
+function against a baseline agent using alpha-beta search and iterative
+deepening (ID) called `AB_Improved`. The three `AB_Custom` agents use
+ID and alpha-beta search with the custom_score functions defined in
+game_agent.py.
+
+                        *************************                         
+                             Playing Matches                              
+                        *************************                         
+
+ Match #   Opponent         0            1            2            3            4            5      
+                        Won | Lost   Won | Lost   Won | Lost   Won | Lost   Won | Lost   Won | Lost 
+    1       Random      37  |   3    40  |   0    38  |   2    40  |   0    38  |   2    39  |   1  
+    2       MM_Open     23  |  17    24  |  16    20  |  20    27  |  13    27  |  13    20  |  20  
+    3      MM_Center    38  |   2    40  |   0    40  |   0    39  |   1    37  |   3    38  |   2  
+    4     MM_Improved   20  |  20    23  |  17    19  |  21    19  |  21    27  |  13    20  |  20  
+    5       AB_Open     20  |  20    19  |  21    22  |  18    20  |  20    19  |  21    20  |  20  
+    6      AB_Center    29  |  11    31  |   9    35  |   5    33  |   7    35  |   5    31  |   9  
+    7     AB_Improved   19  |  21    17  |  23    15  |  25    18  |  22    19  |  21    20  |  20  
+--------------------------------------------------------------------------
+           Win Rate:      66.4%        69.3%        67.5%        70.0%        72.1%        67.1%    
+
+There were 1.0 timeouts during the tournament -- make sure your agent handles search timeout correctly, and consider increasing the timeout margin for your agent.
+
+
+Your ID search forfeited 4.0 games while there were still legal moves available to play.
+
