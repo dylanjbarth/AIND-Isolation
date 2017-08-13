@@ -97,7 +97,7 @@ def next_round_improved_score_for_opponent(game, player):
 
 def improved_score(game, player):
     """Return number of player moves minus number of opponent moves."""
-    return num_player_moves(game, player) - num_opponent_moves(game, player)
+    return float(num_player_moves(game, player) - num_opponent_moves(game, player))
 
 def improved_center_score(game, player):
     """Return negative center score for player minus the center score for the opponent.
