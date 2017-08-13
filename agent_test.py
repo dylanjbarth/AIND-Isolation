@@ -20,6 +20,25 @@ class IsolationTest(unittest.TestCase):
         self.player2 = "Player2"
         self.game = isolation.Board(self.player1, self.player2)
 
+class TestCustomHeuristics(unittest.TestCase):
+
+    def setUp(self):
+        reload(game_agent)
+        self.player1 = game_agent.AlphaBetaPlayer()
+        self.player2 = game_agent.AlphaBetaPlayer()
+        self.game = isolation.Board(self.player1, self.player2, width=9, height=9)
+
+    def test_distance_to_opponent_simple(self):
+        self.game.apply_move((0,0))
+        self.game.apply_move((0,2))
+        h = game_agent.distance_to_opponent(self.game, self.player1)
+        self.assertEqual(h, 2.0)
+
+    def test_distance_to_opponent_diagonal(self):
+        self.game.apply_move((0,0))
+        self.game.apply_move((3,4))
+        h = game_agent.distance_to_opponent(self.game, self.player1)
+        self.assertEqual(h, 5.0)
 
 if __name__ == '__main__':
     unittest.main()

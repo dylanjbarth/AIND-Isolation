@@ -216,7 +216,7 @@ def custom_score(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    return improved_with_endgame_strategy(game, player)
+    return improved_score_plus_overlap_with_opponent(game, player)
 
 @lose_win_check
 def custom_score_2(game, player):
@@ -241,7 +241,7 @@ def custom_score_2(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    return improved_with_improved_endgame_strategy(game, player)
+    return improved_score_plus_improved_center(game, player)
 
 @lose_win_check
 def custom_score_3(game, player):
@@ -266,7 +266,7 @@ def custom_score_3(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    return improved_with_improved_endgame_strategy_2(game, player)
+    return improved_score_minus_center(game, player)
 
 
 class IsolationPlayer:
