@@ -165,28 +165,35 @@ def improved_with_improved_endgame_strategy(game, player):
         return next_round_improved_score_for_player(game, player) - next_round_improved_score_for_opponent(game, player)
     return improved_score(game, player)
 
+####################################################
+# Combined Heuristic functions based on pre_tournament.py
+####################################################
+
+def improved_score_minus_center_minus_distance_to_opponent(game, player):
+    return improved_score(game, player) - distance_to_center(game, player) - distance_to_opponent(game, player)
+
+def improved_score_minus_center_plus_overlap_with_opponent(game, player):
+    return improved_score(game, player) - distance_to_center(game, player) + overlap_with_opponent_moves(game, player)
+
+def improved_score_minus_center_plus_improved_center(game, player):
+    return improved_score(game, player) - distance_to_center(game, player) + improved_center_score(game, player)
+
+def improved_score_minus_distance_to_opponent_plus_overlap_with_opponent(game, player):
+    return improved_score(game, player) - distance_to_opponent(game, player) + overlap_with_opponent_moves(game, player)
+
+def improved_score_minus_distance_to_opponent_plus_improved_center(game, player):
+    return improved_score(game, player) - distance_to_opponent(game, player) + improved_center_score(game, player)
+
+def improved_score_plus_overlap_with_opponent_plus_improved_center(game, player):
+    return improved_score(game, player) + overlap_with_opponent_moves(game, player) + improved_center_score(game, player)
+
 ALL_HEURISTICS_AS_SCORE_FCNS = [(lose_win_check(f), f.__name__) for f in [
-    distance_to_opponent,
-    overlap_with_opponent_moves,
-    num_player_moves,
-    num_opponent_moves,
-    distance_to_center,
-    next_round_improved_score_for_player,
-    next_round_improved_score_for_opponent,
-    improved_score,
-    improved_center_score,
-    improved_score_plus_center_mod2,
-    improved_score_plus_center,
-    improved_score_minus_center,
-    improved_score_plus_distance_to_opponent,
-    improved_score_minus_distance_to_opponent,
-    improved_score_plus_overlap_with_opponent,
-    improved_score_minus_overlap_with_opponent,
-    improved_score_plus_improved_center,
-    improved_score_minus_improved_center,
-    center_then_improved_score,
-    improved_with_endgame_strategy,
-    improved_with_improved_endgame_strategy,
+    improved_score_minus_center_minus_distance_to_opponent,
+    improved_score_minus_center_plus_overlap_with_opponent,
+    improved_score_minus_center_plus_improved_center,
+    improved_score_minus_distance_to_opponent_plus_overlap_with_opponent,
+    improved_score_minus_distance_to_opponent_plus_improved_center,
+    improved_score_plus_overlap_with_opponent_plus_improved_center,
 ]]
 
 ## Actual custom score functions
