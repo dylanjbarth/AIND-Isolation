@@ -2,6 +2,7 @@
 test your agent's strength against a set of known agents using tournament.py
 and include the results in your report.
 """
+import math
 import random
 
 
@@ -10,6 +11,187 @@ class SearchTimeout(Exception):
     pass
 
 
+def lose_win_check(fn):
+    """Decorator that checks if they player has won or lost before evaluating the current move."""
+    def wraps(game, player):
+        if game.is_loser(player):
+            return float("-inf")
+        if game.is_winner(player):
+            return float("inf")
+        return fn(game, player)
+    return wraps
+
+####################################################
+# Metrics
+####################################################
+
+def pct_board_available(game):
+    """Return percentage of board that is blank"""
+    return float(len(game.get_blank_spaces())) / float(game.height * game.width)
+
+def distance_to_opponent(game, player):
+    """Return the geometric distance the player is from their opponent.
+
+    This has a maximum value of sqrt(game.width**2 + game.height**2)
+    """
+    opponent = game.get_opponent(player)
+    player_x, player_y = game.get_player_location(player)
+    opp_x, opp_y = game.get_player_location(opponent)
+    return math.sqrt((player_x - opp_x)**2.0 + (player_y - opp_y)**2.0)
+
+def overlap_with_opponent_moves(game, player):
+    """Return number of overlapping moves with opponent.
+
+    This has a min value of 0 and a max value of 2.
+    """
+    player_moves = game.get_legal_moves(player)
+    opponent_moves = game.get_legal_moves(game.get_opponent(player))
+    overlap = len(set(opponent_moves).intersection(set(player_moves)))
+    return overlap
+
+def num_player_moves(game, player):
+    """Return number of moves available to player.
+
+    This has a min value of 0 and a max value of 8, assuming the board is at least 4x4.
+    """
+    return len(game.get_legal_moves(player))
+
+def num_opponent_moves(game, player):
+    """Return number of moves available to opponent.
+
+    This has a min value of 0 and a max value of 8, assuming the board is at least 5x5.
+    """
+    return len(game.get_legal_moves(game.get_opponent(player)))
+
+def distance_to_center(game, player):
+    """Return Euclidean distance to center.
+
+    This has a max value of sqrt(game.width**2 + game.height**2)
+    """
+    c_x, c_y = game.width / 2.0, game.height / 2.0
+    y, x = game.get_player_location(player)
+    return math.sqrt(float((c_y - y)**2 + (c_x - x)**2))
+
+def next_round_improved_score_for_player(game, player):
+    """Returns the sum of the next available number of legal player moves
+    for each of the current legal moves.
+    """
+    next_round_legal_moves = 0
+    for move in game.get_legal_moves(player):
+        g = game.forecast_move(move)
+        next_round_legal_moves += len(g.get_legal_moves(player))
+    return next_round_legal_moves
+
+def next_round_improved_score_for_opponent(game, player):
+    """Returns the sum of the next available number of legal opponent moves
+    for each of the current legal moves.
+    """
+    opponent = game.get_opponent(player)
+    return next_round_improved_score_for_player(game, opponent)
+
+####################################################
+# Heuristic functions
+####################################################
+
+## Improved score +/- individual metrics
+
+def improved_score(game, player):
+    """Return number of player moves minus number of opponent moves."""
+    return num_player_moves(game, player) - num_opponent_moves(game, player)
+
+def improved_center_score(game, player):
+    """Return negative center score for player minus the center score for the opponent.
+
+    Goal here is for our player to stay toward the middle while trying to force opponent outside.
+    """
+    return -1 * distance_to_center(game, player) - distance_to_center(game, game.get_opponent(player))
+
+def improved_score_plus_center_mod2(game, player):
+    return improved_score(game, player) - (distance_to_center(game, player) * 2.0)
+
+def improved_score_plus_center(game, player):
+    return improved_score(game, player) + distance_to_center(game, player)
+
+def improved_score_minus_center(game, player):
+    return improved_score(game, player) - distance_to_center(game, player)
+
+def improved_score_plus_distance_to_opponent(game, player):
+    return improved_score(game, player) + distance_to_opponent(game, player)
+
+def improved_score_minus_distance_to_opponent(game, player):
+    return improved_score(game, player) - distance_to_opponent(game, player)
+
+def improved_score_plus_overlap_with_opponent(game, player):
+    return improved_score(game, player) + overlap_with_opponent_moves(game, player)
+
+def improved_score_minus_overlap_with_opponent(game, player):
+    return improved_score(game, player) - overlap_with_opponent_moves(game, player)
+
+def improved_score_plus_improved_center(game, player):
+    return improved_score(game, player) + improved_center_score(game, player)
+
+def improved_score_minus_improved_center(game, player):
+    return improved_score(game, player) - improved_center_score(game, player)
+
+## Endgame strategy
+
+def center_then_improved_score(game, player):
+    """Try to stay toward the center until the endgame, then simply maximize available moves."""
+    is_endgame = pct_board_available(game) < 0.35
+    if is_endgame:
+        return improved_score(game, player)
+    return improved_center_score(game, player)
+
+def improved_with_endgame_strategy(game, player):
+    """Returns improved score until the endgame, when it returns
+    improved score boosted by looking ahead into future rounds for the player only.
+
+    Endgame is set to when the board only has 40% blank squares left.
+    """
+    ENDGAME_THRESHOLD = 0.40
+    score = improved_score(game, player)
+    if pct_board_available(game) < ENDGAME_THRESHOLD:
+        return score + next_round_improved_score_for_player(game, player)
+    return score
+
+def improved_with_improved_endgame_strategy(game, player):
+    """Returns improved score until the endgame, when it returns
+    improved score boosted by looking ahead into future rounds for the player only.
+
+    Endgame is set to when the board only has 40% blank squares left.
+    """
+    ENDGAME_THRESHOLD = 0.40
+    if pct_board_available(game) < ENDGAME_THRESHOLD:
+        return next_round_improved_score_for_player(game, player) - next_round_improved_score_for_opponent(game, player)
+    return improved_score(game, player)
+
+ALL_HEURISTICS_AS_SCORE_FCNS = [(lose_win_check(f), f.__name__) for f in [
+    distance_to_opponent,
+    overlap_with_opponent_moves,
+    num_player_moves,
+    num_opponent_moves,
+    distance_to_center,
+    next_round_improved_score_for_player,
+    next_round_improved_score_for_opponent,
+    improved_score,
+    improved_center_score,
+    improved_score_plus_center_mod2,
+    improved_score_plus_center,
+    improved_score_minus_center,
+    improved_score_plus_distance_to_opponent,
+    improved_score_minus_distance_to_opponent,
+    improved_score_plus_overlap_with_opponent,
+    improved_score_minus_overlap_with_opponent,
+    improved_score_plus_improved_center,
+    improved_score_minus_improved_center,
+    center_then_improved_score,
+    improved_with_endgame_strategy,
+    improved_with_improved_endgame_strategy,
+]]
+
+## Actual custom score functions
+
+@lose_win_check
 def custom_score(game, player):
     """Calculate the heuristic value of a game state from the point of view
     of the given player.
@@ -34,10 +216,9 @@ def custom_score(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    return improved_with_endgame_strategy(game, player)
 
-
+@lose_win_check
 def custom_score_2(game, player):
     """Calculate the heuristic value of a game state from the point of view
     of the given player.
@@ -60,10 +241,9 @@ def custom_score_2(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    return improved_with_improved_endgame_strategy(game, player)
 
-
+@lose_win_check
 def custom_score_3(game, player):
     """Calculate the heuristic value of a game state from the point of view
     of the given player.
@@ -86,8 +266,7 @@ def custom_score_3(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    return improved_with_improved_endgame_strategy_2(game, player)
 
 
 class IsolationPlayer:
@@ -112,7 +291,7 @@ class IsolationPlayer:
         positive value large enough to allow the function to return before the
         timer expires.
     """
-    def __init__(self, search_depth=3, score_fn=custom_score, timeout=10.):
+    def __init__(self, search_depth=3, score_fn=custom_score, timeout=20.):
         self.search_depth = search_depth
         self.score = score_fn
         self.time_left = None
@@ -127,7 +306,6 @@ class IsolationPlayer:
         """Return true if no legal moves left"""
         self._time_check()
         return not game.get_legal_moves(self)
-
 
 
 class MinimaxPlayer(IsolationPlayer):
@@ -295,7 +473,7 @@ class AlphaBetaPlayer(IsolationPlayer):
 
         # Initialize the best move so that this function returns something
         # in case the search fails due to timeout
-        best_move = (-1, -1)
+        best_move = next(iter(game.get_legal_moves()), (-1, -1))
 
         try:
             # The try/except block will automatically catch the exception
